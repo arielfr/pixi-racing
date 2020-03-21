@@ -216,7 +216,7 @@ window.onload = function () {
 
     const score = new PIXI.Text(getScoreText(0), { fontFamily: 'Arial', fontSize: 24, fill: 0xFFFFFF, align: 'left', stroke: 'black', strokeThickness: 4 });
 
-    score.x = app.renderer.width - score.width - 20;
+    score.x = 20;
     score.y = 20;
 
     app.stage.addChild(score);
