@@ -79,83 +79,99 @@ class Car {
 }
 
 class gameBackground {
-  constructor(appWidth, appHeight, gameSpeed) {
-    this.container = undefined;
-    this.linesContainer = undefined;
+  constructor(appWidth, appHeight, gameSpeed, lanes) {
+    this.lanes = lanes;
+    this.container = null;
+    this.linesContainer = null;
 
     this.appWidth = appWidth;
     this.appHeight = appHeight;
     this.gameSpeed = gameSpeed;
 
-    this.xRoadStart = undefined;
-    this.xRoadEnd = undefined;
+    this.xRoadStart = null;
+    this.xRoadEnd = null;
 
     this.create();
   }
 
-  createYellowLine(x, height) {
+  createRoad(x, y, width, height) {
     const line = new PIXI.Graphics();
 
-    line.beginFill(0xFFAFF00);
-    line.drawRect(x, 0, 6, height);
+    line.beginFill(0xF646464);
+    line.drawRect(0, 0, width, height);
     line.endFill();
+
+    line.position.set(x, y);
 
     return line;
   }
 
+  createLine({ x = 0, y = 0, width = 6, height = 64, color = 0xFFFFFF }) {
+    const line = new PIXI.Graphics();
+
+    line.beginFill(color);
+    line.drawRect(0, 0, width, height);
+    line.endFill();
+
+    line.position.set(x, y);
+
+    return line;
+  }
+
+  createYellowLine(x, height) {
+    return this.createLine({
+      x: x,
+      height: height,
+      color: 0xFFAFF00,
+    });
+  }
+
   create() {
     const background = new PIXI.Container();
-    const rectangle = PIXI.Sprite.from(PIXI.Texture.WHITE);
 
-    const dividedWidth = this.appWidth / 8;
-    const roadWidth = (dividedWidth * 6);
+    const gridWidth = 10;
+    const gridMinWidth = this.appWidth / gridWidth;
+    const playableGrid = 6;
+    const nonPlayableGrid = gridWidth - playableGrid;
+    const nonPlayableWidth = (nonPlayableGrid * gridMinWidth);
 
-    rectangle.width = roadWidth;
-    rectangle.height = this.appHeight;
-    rectangle.tint = 0xF646464;
-    rectangle.x = dividedWidth;
-    rectangle.y = 0;
+    // Road cration
+    const roadX = nonPlayableWidth / 2;
+    const roadWidth = gridMinWidth * playableGrid;
 
-    background.addChild(rectangle);
+    const road = this.createRoad(roadX, 0, roadWidth, this.appHeight);
 
-    const borderOne = PIXI.Sprite.from(PIXI.Texture.WHITE);
+    background.addChild(road);
 
-    borderOne.width = 6;
-    borderOne.height = this.appHeight;
-    borderOne.tint = 0xFFFFFF;
-    borderOne.x = dividedWidth - 6;
-    borderOne.y = 0;
+    this.xRoadStart = road.x;
+    this.xRoadEnd = road.x + road.width;
 
-    const borderTwo = PIXI.Sprite.from(PIXI.Texture.WHITE);
+    // Lanes Creation
+    background.addChild(this.createYellowLine(this.xRoadStart, this.appHeight));
+    background.addChild(this.createYellowLine(this.xRoadEnd, this.appHeight));
 
-    borderTwo.width = 6;
-    borderTwo.height = this.appHeight;
-    borderTwo.tint = 0xFFFFFF;
-    borderTwo.x = this.appWidth - dividedWidth;
-    borderTwo.y = 0;
+    const totalWidthPerLane = road.width / this.lanes;
 
-    background.addChild(this.createYellowLine(dividedWidth - 6, this.appHeight));
-    background.addChild(this.createYellowLine(dividedWidth * 3, this.appHeight));
-    background.addChild(this.createYellowLine(dividedWidth * 5, this.appHeight));
-    background.addChild(this.createYellowLine(this.appWidth - dividedWidth, this.appHeight));
+    // First and last
+    for (let i = 1; i <= (this.lanes - 1); i ++) {
+      background.addChild(
+        this.createYellowLine(this.xRoadStart + (totalWidthPerLane * i), this.appHeight)
+      );
+    }
 
-    this.xRoadStart = borderOne.x;
-    this.xRoadEnd = borderTwo.x;
-
+    // Lines creation
     const linesContainer = new PIXI.Container();
+    const lineDistanceFromStart = (totalWidthPerLane / 2);
 
-    const laneWidth = (roadWidth / 3);
-
-    for (let j = 1; j <= 3; j++) {
+    for (let j = 1; j <= this.lanes; j++) {
       for (let i = 0; i <= (this.appHeight * 2); i = (i + 40 + 64)) {
-
-        const laneLine = new PIXI.Graphics();
-
-        laneLine.beginFill(0xFFFFFF);
-        laneLine.drawRect(laneWidth * j, -this.appHeight + i + 16, 6, 64);
-        laneLine.endFill();
-
-        linesContainer.addChild(laneLine);
+        // Line Creation
+        linesContainer.addChild(
+          this.createLine({
+            x: this.xRoadStart + (totalWidthPerLane * j) - lineDistanceFromStart,
+            y: -this.appHeight + i + 16,
+          })
+        );
       }
     }
 
@@ -184,7 +200,7 @@ const keyboard = new KeyBoard().addEvents();
 window.onload = function () {
   // Create the application
   const app = new PIXI.Application({
-    width: 640,
+    width: 320,
     height: 640,
     backgroundColor: 0x659B35,
   });
@@ -205,12 +221,13 @@ window.onload = function () {
 
   function startGame () {
     const gameSpeed = 5;
+    const lanes = 2;
     const gameDiv = document.getElementById('game');
 
     // Append the application
     gameDiv.appendChild(app.view);
 
-    const background = new gameBackground(app.renderer.width, app.renderer.height, gameSpeed);
+    const background = new gameBackground(app.renderer.width, app.renderer.height, gameSpeed, lanes);
 
     app.stage.addChild(background.container);
 
@@ -237,7 +254,7 @@ window.onload = function () {
     // Start game date
     let startDate = new Date();
     let enemyCardsEvaded = 0;
-    let enemySpeed = 5;
+    let enemySpeed = gameSpeed;
     let msToReleaseEnemy = 400;
     let difficultyIncrease = false;
     const maxEnemySpeed = 14;
