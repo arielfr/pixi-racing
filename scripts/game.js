@@ -224,6 +224,8 @@ window.onload = function () {
     const lanes = 2;
     const gameDiv = document.getElementById('game');
 
+    app.stage.sortableChildren = true;
+
     // Append the application
     gameDiv.appendChild(app.view);
 
@@ -235,6 +237,7 @@ window.onload = function () {
 
     score.x = 20;
     score.y = 20;
+    score.zIndex = 100;
 
     app.stage.addChild(score);
 
