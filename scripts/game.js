@@ -263,26 +263,50 @@ window.onload = function () {
     // Create Scenario
     const scenario = new gameBackground(app.renderer.width, app.renderer.height, gameSpeed, lanes);
 
+    const textContainer = new PIXI.Container();
+
     // Create Score
     const scoreText = new PIXI.Text(getScoreText(0), { fontFamily: 'Arial', fontSize: 24, fill: 0xFFFFFF, align: 'left', stroke: 'black', strokeThickness: 4 });
 
     scoreText.x = 20;
     scoreText.y = 20;
-    scoreText.zIndex = 100;
 
     // Create Score
     const enemySpeedText = new PIXI.Text(getEnemySpeedText(0), { fontFamily: 'Arial', fontSize: 14, fill: 0xFFFFFF, align: 'left', stroke: 'black', strokeThickness: 2 });
 
     enemySpeedText.x = 20;
     enemySpeedText.y = 50;
-    enemySpeedText.zIndex = 100;
 
     // Create Score
     const msToReleaseText = new PIXI.Text(getMsToReleaseText(0), { fontFamily: 'Arial', fontSize: 14, fill: 0xFFFFFF, align: 'left', stroke: 'black', strokeThickness: 2 });
 
     msToReleaseText.x = 20;
     msToReleaseText.y = 70;
-    msToReleaseText.zIndex = 100;
+
+    textContainer.addChild(scoreText);
+    textContainer.addChild(enemySpeedText);
+    textContainer.addChild(msToReleaseText);
+
+    textContainer.zIndex = 100;
+
+    const gameOverContainer = new PIXI.Container();
+
+    const gameOverText = new PIXI.Text('GAME OVER', { fontFamily: 'Arial', fontSize: 40, fill: 0xFFFFFF, align: 'center', stroke: 'black', strokeThickness: 4 });
+    const restartButton = new PIXI.Text('Play Again', { fontFamily: 'Arial', fontSize: 30, fill: 0xFFFFFF, align: 'center', stroke: 'black', strokeThickness: 4 });
+
+    restartButton.interactive = true;
+    restartButton.buttonMode = true;
+    restartButton.y = 50;
+    restartButton.x = (gameOverText.width / 2) - (restartButton.width / 2)
+
+    gameOverContainer.addChild(gameOverText);
+    gameOverContainer.addChild(restartButton);
+
+    gameOverContainer.x = (app.renderer.width / 2) - (gameOverContainer.width / 2);
+    gameOverContainer.y = (app.renderer.height / 2) - (gameOverContainer.height / 2);
+    gameOverContainer.zIndex = 200;
+
+    gameOverContainer.visible = false;
 
     // Crete Player Car
     const playerCar = new Car(app.loader.resources.player.texture)
@@ -291,15 +315,14 @@ window.onload = function () {
     const playerCarSprite = playerCar.sprite;
 
     app.stage.addChild(scenario.container);
-    app.stage.addChild(scoreText);
-    app.stage.addChild(enemySpeedText);
-    app.stage.addChild(msToReleaseText);
+    app.stage.addChild(textContainer);
+    app.stage.addChild(gameOverContainer);
     app.stage.addChild(playerCarSprite);
 
     // Indicates if the players loss
     let loss = false;
     // Enemy Cars
-    const enemyCars = [];
+    let enemyCars = [];
     // Start game date
     let startDate = new Date();
     let enemyCardsEvaded = 0;
@@ -311,6 +334,27 @@ window.onload = function () {
 
     enemySpeedText.text = getEnemySpeedText(enemySpeed);
     msToReleaseText.text = getMsToReleaseText(msToReleaseEnemy);
+
+    restartButton.on('click', () => {
+      enemyCars.forEach(c => {
+        app.stage.removeChild(c);
+      });
+
+      enemyCars = [];
+      enemyCardsEvaded = 0;
+      enemySpeed = gameSpeed;
+      msToReleaseEnemy = 400;
+      difficultyIncrease = false;
+      startDate = new Date();
+
+      playerCar.setPosition(app.renderer.width / 2, app.renderer.height / 2);
+      scoreText.text = getScoreText(0);
+      enemySpeedText.text = getEnemySpeedText(enemySpeed);
+      msToReleaseText.text = getMsToReleaseText(msToReleaseEnemy);
+
+      loss = false;
+      gameOverContainer.visible = false;
+    });
 
     // Start Game Loop
     app.ticker.add(() => {
@@ -412,6 +456,8 @@ window.onload = function () {
             loss = true;
           }
         }
+      } else {
+        gameOverContainer.visible = true;
       }
     });
   }
