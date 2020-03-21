@@ -94,13 +94,11 @@ class gameBackground {
   }
 
   createYellowLine(x, height) {
-    const line = PIXI.Sprite.from(PIXI.Texture.WHITE);
+    const line = new PIXI.Graphics();
 
-    line.width = 6;
-    line.height = height;
-    line.tint = 0xFFFFFFF;
-    line.x = x;
-    line.y = 0;
+    line.beginFill(0xFFAFF00);
+    line.drawRect(x, 0, 6, height);
+    line.endFill();
 
     return line;
   }
@@ -124,7 +122,7 @@ class gameBackground {
 
     borderOne.width = 6;
     borderOne.height = this.appHeight;
-    borderOne.tint = 0xFFFFFFF;
+    borderOne.tint = 0xFFFFFF;
     borderOne.x = dividedWidth - 6;
     borderOne.y = 0;
 
@@ -132,7 +130,7 @@ class gameBackground {
 
     borderTwo.width = 6;
     borderTwo.height = this.appHeight;
-    borderTwo.tint = 0xFFFFFFF;
+    borderTwo.tint = 0xFFFFFF;
     borderTwo.x = this.appWidth - dividedWidth;
     borderTwo.y = 0;
 
@@ -150,13 +148,12 @@ class gameBackground {
 
     for (let j = 1; j <= 3; j++) {
       for (let i = 0; i <= (this.appHeight * 2); i = (i + 40 + 64)) {
-        const laneLine = PIXI.Sprite.from(PIXI.Texture.WHITE);
 
-        laneLine.width = 6;
-        laneLine.height = 64;
-        laneLine.tint = 0xFFFFFF;
-        laneLine.x = laneWidth * j;
-        laneLine.y = -this.appHeight + i + 16;
+        const laneLine = new PIXI.Graphics();
+
+        laneLine.beginFill(0xFFFFFF);
+        laneLine.drawRect(laneWidth * j, -this.appHeight + i + 16, 6, 64);
+        laneLine.endFill();
 
         linesContainer.addChild(laneLine);
       }
@@ -175,6 +172,10 @@ class gameBackground {
       this.linesContainer.position.y = this.linesContainer.position.y - this.appHeight + 16;
     }
   }
+}
+
+function getScoreText(score) {
+  return `SCORE: ${score}`;
 }
 
 // Create Keyboard
@@ -213,6 +214,13 @@ window.onload = function () {
 
     app.stage.addChild(background.container);
 
+    const score = new PIXI.Text(getScoreText(0), { fontFamily: 'Arial', fontSize: 24, fill: 0xFFFFFF, align: 'left', stroke: 'black', strokeThickness: 4 });
+
+    score.x = app.renderer.width - score.width - 20;
+    score.y = 20;
+
+    app.stage.addChild(score);
+
     // Crete player Car
     const playerCar = new Car(app.loader.resources.player.texture)
       .setPosition(app.renderer.width / 2, app.renderer.height / 2);
@@ -250,8 +258,9 @@ window.onload = function () {
           // Get a random enemy sprite
           const enemyTexture = app.loader.resources[`enemy${randomBetween(1,5)}`].texture;
 
-          const enemyCar = new Car(enemyTexture)
-            .setPosition(randomBetween(background.xRoadStart, background.xRoadEnd), -16);
+          const enemyCar = new Car(enemyTexture);
+
+          enemyCar.setPosition(randomBetween(background.xRoadStart + (enemyCar.sprite.width / 2), background.xRoadEnd - (enemyCar.sprite.width / 2)), -16);
 
           // Add Enemy Car
           enemyCars.push(enemyCar.sprite);
@@ -310,6 +319,7 @@ window.onload = function () {
 
             // Cars evaded
             enemyCardsEvaded = enemyCardsEvaded + 1;
+            score.text = getScoreText(enemyCardsEvaded);
             difficultyIncrease = false;
           }
 
