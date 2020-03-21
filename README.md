@@ -2,7 +2,7 @@
 
 Racing game created using [PixiJS](https://pixijs.io/)
 
-![Alt text](/screenshots/demo.gif?raw=true "Demo")
+![Demo](/screenshots/demo.gif?raw=true "Demo" | height=400)
 
 ## Play it
 
