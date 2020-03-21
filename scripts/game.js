@@ -91,6 +91,8 @@ class gameBackground {
     this.xRoadStart = null;
     this.xRoadEnd = null;
 
+    this.lanesPos = [];
+
     this.create();
   }
 
@@ -164,15 +166,25 @@ class gameBackground {
     const lineDistanceFromStart = (totalWidthPerLane / 2);
 
     for (let j = 1; j <= this.lanes; j++) {
+      const laneStart = this.xRoadStart + (totalWidthPerLane * j) - lineDistanceFromStart;
+
       for (let i = 0; i <= (this.appHeight * 2); i = (i + 40 + 64)) {
         // Line Creation
         linesContainer.addChild(
           this.createLine({
-            x: this.xRoadStart + (totalWidthPerLane * j) - lineDistanceFromStart,
+            x: laneStart,
             y: -this.appHeight + i + 16,
           })
         );
       }
+
+      this.lanesPos.push({
+        x: laneStart - (lineDistanceFromStart / 2),
+      });
+
+      this.lanesPos.push({
+        x: laneStart + (lineDistanceFromStart / 2),
+      });
     }
 
     background.addChild(linesContainer);
@@ -190,8 +202,16 @@ class gameBackground {
   }
 }
 
-function getScoreText(score) {
-  return `SCORE: ${score}`;
+function getScoreText(value) {
+  return `SCORE: ${value}`;
+}
+
+function getEnemySpeedText(value) {
+  return `ENEMY SPEED: ${value}`;
+}
+
+function getMsToReleaseText(value) {
+  return `MS TO RELEASE: ${value}`;
 }
 
 // Create Keyboard
@@ -224,30 +244,46 @@ window.onload = function () {
     const lanes = 2;
     const gameDiv = document.getElementById('game');
 
+    // Allow zIndex usage
     app.stage.sortableChildren = true;
 
     // Append the application
     gameDiv.appendChild(app.view);
 
-    const background = new gameBackground(app.renderer.width, app.renderer.height, gameSpeed, lanes);
+    // Create Scenario
+    const scenario = new gameBackground(app.renderer.width, app.renderer.height, gameSpeed, lanes);
 
-    app.stage.addChild(background.container);
+    // Create Score
+    const scoreText = new PIXI.Text(getScoreText(0), { fontFamily: 'Arial', fontSize: 24, fill: 0xFFFFFF, align: 'left', stroke: 'black', strokeThickness: 4 });
 
-    const score = new PIXI.Text(getScoreText(0), { fontFamily: 'Arial', fontSize: 24, fill: 0xFFFFFF, align: 'left', stroke: 'black', strokeThickness: 4 });
+    scoreText.x = 20;
+    scoreText.y = 20;
+    scoreText.zIndex = 100;
 
-    score.x = 20;
-    score.y = 20;
-    score.zIndex = 100;
+    // Create Score
+    const enemySpeedText = new PIXI.Text(getEnemySpeedText(0), { fontFamily: 'Arial', fontSize: 14, fill: 0xFFFFFF, align: 'left', stroke: 'black', strokeThickness: 2 });
 
-    app.stage.addChild(score);
+    enemySpeedText.x = 20;
+    enemySpeedText.y = 50;
+    enemySpeedText.zIndex = 100;
 
-    // Crete player Car
+    // Create Score
+    const msToReleaseText = new PIXI.Text(getMsToReleaseText(0), { fontFamily: 'Arial', fontSize: 14, fill: 0xFFFFFF, align: 'left', stroke: 'black', strokeThickness: 2 });
+
+    msToReleaseText.x = 20;
+    msToReleaseText.y = 70;
+    msToReleaseText.zIndex = 100;
+
+    // Crete Player Car
     const playerCar = new Car(app.loader.resources.player.texture)
       .setPosition(app.renderer.width / 2, app.renderer.height / 2);
 
     const playerCarSprite = playerCar.sprite;
 
-    // add the car to the stage
+    app.stage.addChild(scenario.container);
+    app.stage.addChild(scoreText);
+    app.stage.addChild(enemySpeedText);
+    app.stage.addChild(msToReleaseText);
     app.stage.addChild(playerCarSprite);
 
     // Indicates if the players loss
@@ -260,8 +296,11 @@ window.onload = function () {
     let enemySpeed = gameSpeed;
     let msToReleaseEnemy = 400;
     let difficultyIncrease = false;
-    const maxEnemySpeed = 14;
-    const maxEnemyMsToRelease = 50;
+    const maxEnemySpeed = 12;
+    const maxEnemyMsToRelease = 200;
+
+    enemySpeedText.text = getEnemySpeedText(enemySpeed);
+    msToReleaseText.text = getMsToReleaseText(msToReleaseEnemy);
 
     // Start Game Loop
     app.ticker.add(() => {
@@ -269,7 +308,7 @@ window.onload = function () {
       if (!loss) {
         const now = new Date();
 
-        background.animate();
+        scenario.animate();
 
         // Check if is time to add a car enemy to the game and increase difficulty
         if ((now - startDate) >= msToReleaseEnemy) {
@@ -280,7 +319,10 @@ window.onload = function () {
 
           const enemyCar = new Car(enemyTexture);
 
-          enemyCar.setPosition(randomBetween(background.xRoadStart + (enemyCar.sprite.width / 2), background.xRoadEnd - (enemyCar.sprite.width / 2)), -16);
+          const whichLane = randomBetween(1, 4);
+          const laneToPushEnemy = scenario.lanesPos[whichLane - 1];
+
+          enemyCar.setPosition(laneToPushEnemy.x, -enemyCar.sprite.height);
 
           // Add Enemy Car
           enemyCars.push(enemyCar.sprite);
@@ -295,10 +337,12 @@ window.onload = function () {
 
           if (enemyCardsEvaded % 10 === 0 && enemySpeed <= maxEnemySpeed) {
             enemySpeed = enemySpeed + 1;
+            enemySpeedText.text = getEnemySpeedText(enemySpeed);
           }
 
-          if (enemyCardsEvaded % 10 === 0 && msToReleaseEnemy <= maxEnemyMsToRelease) {
+          if (enemyCardsEvaded % 20 === 0 && msToReleaseEnemy >= maxEnemyMsToRelease) {
             msToReleaseEnemy = msToReleaseEnemy - 50;
+            msToReleaseText.text = getMsToReleaseText(msToReleaseEnemy);
           }
         }
 
@@ -308,17 +352,17 @@ window.onload = function () {
         let playerBounds = playerCarSprite.getBounds();
 
         if (keyboard.isKeyPress(40)) {
-          playerCarSprite.y = playerCarSprite.y + canMoveHowMuch(playerBounds.x, (playerBounds.y + gameSpeed), playerCarSprite.width, playerCarSprite.height, background.xRoadStart, background.xRoadEnd, app.renderer.height, gameSpeed);
+          playerCarSprite.y = playerCarSprite.y + canMoveHowMuch(playerBounds.x, (playerBounds.y + gameSpeed), playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed);
         }
         if (keyboard.isKeyPress(38)) {
-          playerCarSprite.y = playerCarSprite.y - canMoveHowMuch(playerBounds.x, (playerBounds.y - gameSpeed), playerCarSprite.width, playerCarSprite.height, background.xRoadStart, background.xRoadEnd, app.renderer.height, gameSpeed);
+          playerCarSprite.y = playerCarSprite.y - canMoveHowMuch(playerBounds.x, (playerBounds.y - gameSpeed), playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed);
         }
 
         if (keyboard.isKeyPress(37)) {
-          playerCarSprite.x = playerCarSprite.x - canMoveHowMuch((playerBounds.x - gameSpeed), playerBounds.y, playerCarSprite.width, playerCarSprite.height, background.xRoadStart, background.xRoadEnd, app.renderer.height, gameSpeed);
+          playerCarSprite.x = playerCarSprite.x - canMoveHowMuch((playerBounds.x - gameSpeed), playerBounds.y, playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed);
         }
         if (keyboard.isKeyPress(39)) {
-          playerCarSprite.x = playerCarSprite.x + canMoveHowMuch((playerBounds.x + gameSpeed), playerBounds.y, playerCarSprite.width, playerCarSprite.height, background.xRoadStart, background.xRoadEnd, app.renderer.height, gameSpeed);
+          playerCarSprite.x = playerCarSprite.x + canMoveHowMuch((playerBounds.x + gameSpeed), playerBounds.y, playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed);
         }
 
         // Refresh after the movement
@@ -339,7 +383,7 @@ window.onload = function () {
 
             // Cars evaded
             enemyCardsEvaded = enemyCardsEvaded + 1;
-            score.text = getScoreText(enemyCardsEvaded);
+            scoreText.text = getScoreText(enemyCardsEvaded);
             difficultyIncrease = false;
           }
 
