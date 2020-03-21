@@ -1,0 +1,10 @@
+# Dependency directory
+node_modules
+
+# Trash
+.DS_Store
+.idea
+*.iml
+
+.vs/*
+.vscode/*
