@@ -1,0 +1,22 @@
+{
+  "name": "pixi-racing",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "publish": "node publish.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arielfr/pixi-racing.git"
+  },
+  "author": "Ariel Rey",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/arielfr/pixi-racing/issues"
+  },
+  "homepage": "https://github.com/arielfr/pixi-racing#readme",
+  "devDependencies": {
+    "gh-pages": "^2.2.0"
+  }
+}
