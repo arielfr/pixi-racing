@@ -1,0 +1,9 @@
+body {
+  background-color: black;
+}
+
+#game {
+  margin: 0 auto;
+  height: 640px;
+  width: 320px;
+}
