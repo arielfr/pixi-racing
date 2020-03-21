@@ -24,23 +24,33 @@ class KeyBoard {
   }
 }
 
-function canMoveHowMuch(elX, elY, elWidth, elHeight, startMovement, endMovement, appHeight, speed) {
-  const crashRight = ((elX + (elWidth / 2)) <= endMovement);
-  const crashLeft = (elX >= (startMovement + (elWidth / 2)));
-  const xProblem = crashRight && crashLeft;
-  const yProblem = ((elY + elHeight) <= appHeight) && (elY >= 0);
+function canMoveHowMuch(elX, elY, elWidth, elHeight, xStartMovement, endMovement, appHeight, speed, moveX, moveY) {
+  const notCrashRight = ((elX + (elWidth / 2)) <= endMovement);
+  const notCrashLeft = (elX >= (xStartMovement + (elWidth / 2)));
+  const notCrashTop = (elY >= 0);
+  const notCrashBottom = (((elY + elHeight) <= appHeight));
+
+  const xNotProblem = notCrashRight && notCrashLeft;
+  const yNotProblem = notCrashBottom && notCrashTop;
 
   let missing = 0;
 
-  if (!crashRight) {
+  if (!notCrashRight && moveX) {
     missing = endMovement - elX - (elWidth / 2);
   }
 
-  if (!crashLeft) {
-    missing = elX - startMovement;
+  if (!notCrashLeft && moveX) {
+    missing = elX - xStartMovement;
+  }
+  if (!notCrashTop && moveY) {
+    missing = elY - 0;
   }
 
-  return (xProblem && yProblem) ? speed : ((missing > 0) ? 5 : 0);
+  if (!notCrashBottom && moveY) {
+    missing = appHeight - (elY + elHeight);
+  }
+
+  return ((xNotProblem && moveX) || (yNotProblem && moveY)) ? speed : ((missing > 0) ? 5 : 0);
 }
 
 function randomBetween(min, max) {
@@ -86,7 +96,7 @@ class gameBackground {
 
     this.appWidth = appWidth;
     this.appHeight = appHeight;
-    this.gameSpeed = gameSpeed;
+    this.gameSpeed = gameSpeed + 2;
 
     this.xRoadStart = null;
     this.xRoadEnd = null;
@@ -352,17 +362,17 @@ window.onload = function () {
         let playerBounds = playerCarSprite.getBounds();
 
         if (keyboard.isKeyPress(40)) {
-          playerCarSprite.y = playerCarSprite.y + canMoveHowMuch(playerBounds.x, (playerBounds.y + gameSpeed), playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed);
+          playerCarSprite.y = playerCarSprite.y + canMoveHowMuch(playerBounds.x, (playerBounds.y + gameSpeed), playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed, false, true);
         }
         if (keyboard.isKeyPress(38)) {
-          playerCarSprite.y = playerCarSprite.y - canMoveHowMuch(playerBounds.x, (playerBounds.y - gameSpeed), playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed);
+          playerCarSprite.y = playerCarSprite.y - canMoveHowMuch(playerBounds.x, (playerBounds.y - gameSpeed), playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed, false, true);
         }
 
         if (keyboard.isKeyPress(37)) {
-          playerCarSprite.x = playerCarSprite.x - canMoveHowMuch((playerBounds.x - gameSpeed), playerBounds.y, playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed);
+          playerCarSprite.x = playerCarSprite.x - canMoveHowMuch((playerBounds.x - gameSpeed), playerBounds.y, playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed, true, false);
         }
         if (keyboard.isKeyPress(39)) {
-          playerCarSprite.x = playerCarSprite.x + canMoveHowMuch((playerBounds.x + gameSpeed), playerBounds.y, playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed);
+          playerCarSprite.x = playerCarSprite.x + canMoveHowMuch((playerBounds.x + gameSpeed), playerBounds.y, playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed, true, false);
         }
 
         // Refresh after the movement
