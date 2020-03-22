@@ -91,13 +91,23 @@ class PlayerCar extends Car {
     const texture = app.loader.resources.player.texture;
     super(app, texture, boundLeft, boundRight, boundBottom, speed);
 
+    this.explosion = this.craeteExplosion();
+  }
+
+  craeteExplosion() {
     const expFrames = [];
 
     for (let i = 0; i <= 63; i++) {
       expFrames.push(`exp-${i}`);
     }
 
-    this.explosion = PIXI.AnimatedSprite.fromFrames(expFrames);
+    const animatedSprite = PIXI.AnimatedSprite.fromFrames(expFrames);
+
+    animatedSprite.anchor.set(0.5);
+    animatedSprite.loop = false;
+    animatedSprite.animationSpeed = 0.4;
+
+    return animatedSprite;
   }
 
   moveLeft() {
@@ -137,14 +147,10 @@ class PlayerCar extends Car {
   }
 
   explode() {
-    this.explosion.x = (this.sprite.getBounds().x + this.center) - (this.explosion.width / 2) - 7;
-    this.explosion.y = (this.sprite.getBounds().y + (this.sprite.height / 2)) - (this.explosion.height / 2) + 5;
-    this.explosion.loop = false;
-    this.explosion.animationSpeed = 0.4;
+    this.explosion.x = (this.sprite.getBounds().x + this.center) - 7;
+    this.explosion.y = (this.sprite.getBounds().y + (this.sprite.height / 2));
 
-    this.app.stage.addChild(this.explosion);
-
-    this.explosion.play();
+    this.explosion.gotoAndPlay(0);
   }
 }
 
@@ -393,6 +399,7 @@ window.onload = function () {
     app.stage.addChild(textContainer);
     app.stage.addChild(gameOverContainer);
     app.stage.addChild(playerCar.sprite);
+    app.stage.addChild(playerCar.explosion);
 
     // Indicates if the players loss
     let loss = false;
@@ -412,7 +419,7 @@ window.onload = function () {
 
     restartButton.on('click', () => {
       enemyCars.forEach(c => {
-        app.stage.removeChild(c);
+        app.stage.removeChild(c.sprite);
       });
 
       enemyCars = [];
@@ -423,6 +430,7 @@ window.onload = function () {
       startDate = new Date();
 
       playerCar.setPosition(app.renderer.width / 2, app.renderer.height / 2);
+      playerCar.explosion.gotoAndStop(-1);
       scoreText.text = getScoreText(0);
       enemySpeedText.text = getEnemySpeedText(enemySpeed);
       msToReleaseText.text = getMsToReleaseText(msToReleaseEnemy);
