@@ -24,42 +24,23 @@ class KeyBoard {
   }
 }
 
-function canMoveHowMuch(elX, elY, elWidth, elHeight, xStartMovement, endMovement, appHeight, speed, moveX, moveY) {
-  const notCrashRight = ((elX + (elWidth / 2)) <= endMovement);
-  const notCrashLeft = (elX >= (xStartMovement + (elWidth / 2)));
-  const notCrashTop = (elY >= 0);
-  const notCrashBottom = (((elY + elHeight) <= appHeight));
-
-  const xNotProblem = notCrashRight && notCrashLeft;
-  const yNotProblem = notCrashBottom && notCrashTop;
-
-  let missing = 0;
-
-  if (!notCrashRight && moveX) {
-    missing = endMovement - elX - (elWidth / 2);
-  }
-
-  if (!notCrashLeft && moveX) {
-    missing = elX - xStartMovement;
-  }
-  if (!notCrashTop && moveY) {
-    missing = elY - 0;
-  }
-
-  if (!notCrashBottom && moveY) {
-    missing = appHeight - (elY + elHeight);
-  }
-
-  return ((xNotProblem && moveX) || (yNotProblem && moveY)) ? speed : ((missing > 0) ? 5 : 0);
-}
-
 function randomBetween(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
 
 class Car {
-  constructor(texture) {
+  constructor(texture, boundLeft, boundRight, boundBottom, speed) {
     this.sprite = null;
+
+    this.bounds = {
+      xLeft: boundLeft,
+      xRight: boundRight,
+      yTop: 0,
+      yBottom: boundBottom,
+    };
+
+    this.speed = speed;
+
     this.create(texture);
   }
 
@@ -75,16 +56,54 @@ class Car {
     sprite.scale.y = 0.8;
 
     this.sprite = sprite;
+    this.center = this.sprite.width / 2;
 
     return this;
   }
 
   setPosition(x, y) {
-    // Setup the position of the bunny
     this.sprite.x = x;
     this.sprite.y = y;
 
     return this;
+  }
+}
+
+class PlayerCar extends Car {
+  moveLeft() {
+    const bounds = this.sprite.getBounds();
+    const notCrashLeft = (bounds.x >= (this.bounds.xLeft + (this.center / 2)));
+    const missing = (bounds.x - this.bounds.xLeft);
+    const toMove = notCrashLeft ? this.speed : (missing > 0) ? missing : 0;
+
+    this.setPosition(this.sprite.x - toMove, this.sprite.y);
+  }
+
+  moveRight() {
+    const bounds = this.sprite.getBounds();
+    const notCrashRight = ((bounds.x + this.center) <= this.bounds.xRight);
+    const missing = (this.bounds.xRight - bounds.x - this.center);
+    const toMove = notCrashRight ? this.speed : (missing > 0) ? missing : 0;
+
+    this.setPosition(this.sprite.x + toMove, this.sprite.y);
+  }
+
+  moveUp() {
+    const bounds = this.sprite.getBounds();
+    const notCrashTop = (bounds.y >= this.bounds.yTop);
+    const missing = (bounds.y - this.bounds.yTop);
+    const toMove = notCrashTop ? this.speed : (missing > 0) ? missing : 0;
+
+    this.setPosition(this.sprite.x, this.sprite.y - toMove);
+  }
+
+  moveDown() {
+    const bounds = this.sprite.getBounds();
+    const notCrashBottom = ((bounds.y + this.sprite.height) <= this.bounds.yBottom);
+    const missing = this.bounds.yBottom - (bounds.y + this.bounds.yBottom);
+    const toMove = notCrashBottom ? this.speed : (missing > 0) ? missing : 0;
+
+    this.setPosition(this.sprite.x, this.sprite.y + toMove);
   }
 }
 
@@ -309,15 +328,13 @@ window.onload = function () {
     gameOverContainer.visible = false;
 
     // Crete Player Car
-    const playerCar = new Car(app.loader.resources.player.texture)
+    const playerCar = new PlayerCar(app.loader.resources.player.texture, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed)
       .setPosition(app.renderer.width / 2, app.renderer.height / 2);
-
-    const playerCarSprite = playerCar.sprite;
 
     app.stage.addChild(scenario.container);
     app.stage.addChild(textContainer);
     app.stage.addChild(gameOverContainer);
-    app.stage.addChild(playerCarSprite);
+    app.stage.addChild(playerCar.sprite);
 
     // Indicates if the players loss
     let loss = false;
@@ -371,9 +388,9 @@ window.onload = function () {
           // Get a random enemy sprite
           const enemyTexture = app.loader.resources[`enemy${randomBetween(1,5)}`].texture;
 
-          const enemyCar = new Car(enemyTexture);
+          const enemyCar = new Car(enemyTexture, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed);
 
-          const whichLane = randomBetween(1, 4);
+          const whichLane = randomBetween(1, (scenario.lanes * 2));
           const laneToPushEnemy = scenario.lanesPos[whichLane - 1];
 
           enemyCar.setPosition(laneToPushEnemy.x, -enemyCar.sprite.height);
@@ -400,27 +417,22 @@ window.onload = function () {
           }
         }
 
-
-        // each frame we spin the bunny around a bit
-        // rectangle.rotation += 0.01;
-        let playerBounds = playerCarSprite.getBounds();
-
         if (keyboard.isKeyPress(40)) {
-          playerCarSprite.y = playerCarSprite.y + canMoveHowMuch(playerBounds.x, (playerBounds.y + gameSpeed), playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed, false, true);
+          playerCar.moveDown();
         }
         if (keyboard.isKeyPress(38)) {
-          playerCarSprite.y = playerCarSprite.y - canMoveHowMuch(playerBounds.x, (playerBounds.y - gameSpeed), playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed, false, true);
+          playerCar.moveUp();
         }
 
         if (keyboard.isKeyPress(37)) {
-          playerCarSprite.x = playerCarSprite.x - canMoveHowMuch((playerBounds.x - gameSpeed), playerBounds.y, playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed, true, false);
+          playerCar.moveLeft();
         }
         if (keyboard.isKeyPress(39)) {
-          playerCarSprite.x = playerCarSprite.x + canMoveHowMuch((playerBounds.x + gameSpeed), playerBounds.y, playerCarSprite.width, playerCarSprite.height, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed, true, false);
+          playerCar.moveRight();
         }
 
         // Refresh after the movement
-        playerBounds = playerCarSprite.getBounds();
+        let playerBounds = playerCar.sprite.getBounds();
 
         for (let i = 0; i < enemyCars.length; i++) {
           const car = enemyCars[i];
