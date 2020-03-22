@@ -243,6 +243,10 @@ function getMsToReleaseText(value) {
   return `MS TO RELEASE: ${value}`;
 }
 
+function getFPS(value) {
+  return `FPS: ${Math.ceil(value)}`;
+}
+
 // Create Keyboard
 const keyboard = new KeyBoard().addEvents();
 
@@ -269,6 +273,8 @@ window.onload = function () {
   app.loader.load();
 
   function startGame () {
+    const FPS = PIXI.ticker.shared.FPS;
+
     const gameSpeed = 5;
     const lanes = 2;
     const gameDiv = document.getElementById('game');
@@ -291,20 +297,27 @@ window.onload = function () {
     scoreText.y = 20;
 
     // Create Score
-    const enemySpeedText = new PIXI.Text(getEnemySpeedText(0), { fontFamily: 'Arial', fontSize: 14, fill: 0xFFFFFF, align: 'left', stroke: 'black', strokeThickness: 2 });
+    const enemySpeedText = new PIXI.Text(getEnemySpeedText(0), { fontFamily: 'Arial', fontSize: 14, fill: 0xFFFFFF, align: 'left', stroke: 'black', strokeThickness: 4 });
 
     enemySpeedText.x = 20;
     enemySpeedText.y = 50;
 
     // Create Score
-    const msToReleaseText = new PIXI.Text(getMsToReleaseText(0), { fontFamily: 'Arial', fontSize: 14, fill: 0xFFFFFF, align: 'left', stroke: 'black', strokeThickness: 2 });
+    const msToReleaseText = new PIXI.Text(getMsToReleaseText(0), { fontFamily: 'Arial', fontSize: 14, fill: 0xFFFFFF, align: 'left', stroke: 'black', strokeThickness: 4 });
 
     msToReleaseText.x = 20;
     msToReleaseText.y = 70;
 
+    // Create Score
+    const fpsText = new PIXI.Text(getFPS(FPS), { fontFamily: 'Arial', fontSize: 14, fill: 0xFFFFFF, align: 'left', stroke: 'black', strokeThickness: 4 });
+
+    fpsText.x = app.renderer.width - 70;
+    fpsText.y = 26;
+
     textContainer.addChild(scoreText);
     textContainer.addChild(enemySpeedText);
     textContainer.addChild(msToReleaseText);
+    textContainer.addChild(fpsText);
 
     textContainer.zIndex = 100;
 
@@ -375,6 +388,8 @@ window.onload = function () {
 
     // Start Game Loop
     app.ticker.add(() => {
+      fpsText.text = getFPS(FPS);
+
       // If the player didn't loss
       if (!loss) {
         const now = new Date();
