@@ -29,7 +29,8 @@ function randomBetween(min, max) {
 }
 
 class Car {
-  constructor(texture, boundLeft, boundRight, boundBottom, speed) {
+  constructor(app, texture, boundLeft, boundRight, boundBottom, speed) {
+    this.app = app;
     this.sprite = null;
 
     this.bounds = {
@@ -69,7 +70,28 @@ class Car {
   }
 }
 
+class EnemyCar extends Car {
+  constructor(app, boundLeft, boundRight, boundBottom, speed) {
+    // Get a random enemy sprite
+    const texture = app.loader.resources[`enemy${randomBetween(1,5)}`].texture;
+    super(app, texture, boundLeft, boundRight, boundBottom, speed);
+  }
+
+  invoke(lanesQ, lanesPosition) {
+    const whichLane = randomBetween(1, lanesQ);
+    const laneToPushEnemy = lanesPosition[whichLane - 1];
+
+    this.setPosition(laneToPushEnemy.x, -this.sprite.height);
+  }
+}
+
 class PlayerCar extends Car {
+  constructor(app, boundLeft, boundRight, boundBottom, speed) {
+    // Get a random enemy sprite
+    const texture = app.loader.resources.player.texture;
+    super(app, texture, boundLeft, boundRight, boundBottom, speed);
+  }
+
   moveLeft() {
     const bounds = this.sprite.getBounds();
     const notCrashLeft = (bounds.x >= (this.bounds.xLeft + (this.center / 2)));
@@ -273,7 +295,7 @@ window.onload = function () {
   app.loader.load();
 
   function startGame () {
-    const FPS = PIXI.ticker.shared.FPS;
+    const FPS = PIXI.Ticker.shared.FPS;
 
     const gameSpeed = 5;
     const lanes = 2;
@@ -341,7 +363,7 @@ window.onload = function () {
     gameOverContainer.visible = false;
 
     // Crete Player Car
-    const playerCar = new PlayerCar(app.loader.resources.player.texture, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed)
+    const playerCar = new PlayerCar(app, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed)
       .setPosition(app.renderer.width / 2, app.renderer.height / 2);
 
     app.stage.addChild(scenario.container);
@@ -400,21 +422,15 @@ window.onload = function () {
         if ((now - startDate) >= msToReleaseEnemy) {
           startDate = now;
 
-          // Get a random enemy sprite
-          const enemyTexture = app.loader.resources[`enemy${randomBetween(1,5)}`].texture;
+          const enemyCar = new EnemyCar(app, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed);
 
-          const enemyCar = new Car(enemyTexture, scenario.xRoadStart, scenario.xRoadEnd, app.renderer.height, gameSpeed);
-
-          const whichLane = randomBetween(1, (scenario.lanes * 2));
-          const laneToPushEnemy = scenario.lanesPos[whichLane - 1];
-
-          enemyCar.setPosition(laneToPushEnemy.x, -enemyCar.sprite.height);
+          enemyCar.invoke((scenario.lanes * 2), scenario.lanesPos);
 
           // Add Enemy Car
-          enemyCars.push(enemyCar.sprite);
+          enemyCars.push(enemyCar);
 
           // Add to the stage
-          app.stage.addChild(enemyCars[enemyCars.length - 1]);
+          app.stage.addChild(enemyCars[enemyCars.length - 1].sprite);
         }
 
         // Check if need to increase difficulty
@@ -446,11 +462,10 @@ window.onload = function () {
           playerCar.moveRight();
         }
 
-        // Refresh after the movement
-        let playerBounds = playerCar.sprite.getBounds();
-
         for (let i = 0; i < enemyCars.length; i++) {
-          const car = enemyCars[i];
+          // Refresh after the movement
+          const playerBounds = playerCar.sprite.getBounds();
+          const car = enemyCars[i].sprite;
 
           let enemyBounds = car.getBounds();
 
