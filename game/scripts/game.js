@@ -90,6 +90,14 @@ class PlayerCar extends Car {
     // Get a random enemy sprite
     const texture = app.loader.resources.player.texture;
     super(app, texture, boundLeft, boundRight, boundBottom, speed);
+
+    const expFrames = [];
+
+    for (let i = 0; i <= 63; i++) {
+      expFrames.push(`exp-${i}`);
+    }
+
+    this.explosion = PIXI.AnimatedSprite.fromFrames(expFrames);
   }
 
   moveLeft() {
@@ -126,6 +134,17 @@ class PlayerCar extends Car {
     const toMove = notCrashBottom ? this.speed : (missing > 0) ? missing : 0;
 
     this.setPosition(this.sprite.x, this.sprite.y + toMove);
+  }
+
+  explode() {
+    this.explosion.x = (this.sprite.getBounds().x + this.center) - (this.explosion.width / 2) - 7;
+    this.explosion.y = (this.sprite.getBounds().y + (this.sprite.height / 2)) - (this.explosion.height / 2) + 5;
+    this.explosion.loop = false;
+    this.explosion.animationSpeed = 0.4;
+
+    this.app.stage.addChild(this.explosion);
+
+    this.explosion.play();
   }
 }
 
@@ -287,6 +306,10 @@ window.onload = function () {
   app.loader.add('enemy3', 'assets/GreenStrip.png');
   app.loader.add('enemy4', 'assets/PinkStrip.png');
   app.loader.add('enemy5', 'assets/WhiteStrip.png');
+
+  for (let i = 0; i <= 63; i++) {
+    app.loader.add(`exp-${i}`, `assets/explosion/frame00${(i < 10 ? '0' : '')}${i}.png`);
+  }
 
   // When all the assets are loaded start the game
   app.loader.onComplete.add(startGame);
@@ -495,6 +518,7 @@ window.onload = function () {
             (enemyBounds.x + (enemyBounds.width / 2) - marginError) >= (playerBounds.x - (playerBounds.width / 2) + marginError) &&
             (enemyBounds.x - (enemyBounds.width / 2) + marginError) <= (playerBounds.x + (playerBounds.width / 2) - marginError)
           ) {
+            playerCar.explode();
             loss = true;
           }
         }
